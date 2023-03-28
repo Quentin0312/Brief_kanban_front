@@ -2,6 +2,8 @@ var kanban = new jKanban({
     element: '#kanban',
     gutter: '15px',
     widthBoard: '250px',
+    // valeur de board doit être crées selon données récup des requêtes /api/colonne en "GET"
+    // et /api/tache/<column_id> en "GET"
     boards: [{
             'id': '_todo',
             'title': 'TODO',
@@ -50,10 +52,12 @@ var kanban = new jKanban({
     //     class : 'kanban-title-button btn btn-default btn-xs',
     //     footer : false
     // }
+    // => Problème : présent sur toutes les colonnes alors que je veu_ que sur TODO
 });
 
 var addColumn = document.getElementById('addColumn');
 addColumn.addEventListener('click', function () {
+    //ici metre la requete /api/colonne en "POST" => ATTENTION asynchrone à gérer
     kanban.addBoards(
         [{
             'id' : '_default',
@@ -65,6 +69,7 @@ addColumn.addEventListener('click', function () {
 
 var addTask = document.getElementById('addTask');
 addTask.addEventListener('click', function () {
+    //ici metre la requete /api/tache en "POST" => ATTENTION asynchrone à gérer
     kanban.addElement('_todo',
     {
         'title': 'Test'
