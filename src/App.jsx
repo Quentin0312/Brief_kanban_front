@@ -1,11 +1,19 @@
-import { onMount, createResource } from "solid-js";
+import { onMount, createResource, createEffect } from "solid-js";
 
-const columnRequest = async () => (await fetch('http://localhost:8000/api/colonne/', {method: 'GET'})).json().then(response => {console.log(response)})
+// Variable globale contenant le kanban
+var kanban
 
+// Requête API
+const columnRequest = async () => (await fetch('http://localhost:8000/api/colonne/', {method: 'GET'})).json().then(response => {loadBoards(response, kanban)})
+
+const taskRequest = async () => (await fetch ('http://localhost:8000/api/tache/', {method: 'GET'})).json().then(response=>{loadItems(response, kanban)})
+
+// Fonctions
 function addColumn(kanban){
   var addColumn = document.getElementById('addColumn');
   addColumn.addEventListener('click', function () {
       //ici metre la requete /api/colonne en "POST" => ATTENTION asynchrone à gérer
+      console.log("=>",kanban)
       kanban.addBoards(
           [{
               'id' : '_default',
@@ -16,18 +24,27 @@ function addColumn(kanban){
   });
 }
 
+function otherAddColumn(id, titre){
+    kanban.addBoards(
+        [{
+            'id' : String(id),
+            'title' : titre,
+            'item' : [{ 'title' : 'Tache 1'}]
+        }]
+    )
+}
+
 function addTask(kanban){
   var addTask = document.getElementById('addTask');
   addTask.addEventListener('click', function () {
       //ici metre la requete /api/tache en "POST" => ATTENTION asynchrone à gérer
       kanban.addElement('_todo',
-      {
-          'title': 'Test'
-      })
+        { 'title': 'Test' }
+      )
   })
 }
 
-function loadKanban(){
+function OLDOLDloadKanban(){
   // valeur de board doit être crées selon données récup des requêtes /api/colonne en "GET"
   // et /api/tache/<column_id> en "GET"
   const [listeColonnes] = createResource(columnRequest)
@@ -88,19 +105,77 @@ function loadKanban(){
   return kanban
 }
 
+function OLDloadKanban(){
+    const [listeColonnes] = createResource(columnRequest)
+    console.log("laa",listeColonnes())
+}
+
+function oldloadKanban(response){
+    var listeColumn = []
+    for (let elt of response){
+        listeColumn.push({
+            'id' : elt[0],
+            'title' : elt[1],
+            'item' : [{ 'title' : '<span class="font-weight-bold">Item static de test</span>' }]
+        })
+    }
+    var kanban = new jKanban({
+        element : '#kanban',
+        gutter : '15px',
+        widthBoard : '250px',
+        boards : listeColumn
+    })
+}
+
+function loadBoards(response, kanban){
+    for(let elt of response){
+        kanban.addBoards(
+            [{
+                'id' : String(elt[0]),
+                'title' : elt[1]
+            }]
+        )
+    }
+    const [listeTaches] = createResource(taskRequest)
+
+}
+
+function loadItems(response, kanban){
+    for(let elt of response){
+        kanban.addElement(String(elt[0]),
+            { 'title' : elt[1] }
+
+        )
+    }
+}
+
+// MAIN
 function App() {
-  onMount( ()=>{
-    var kanban = loadKanban()
-    addColumn(kanban) // Ajoute le listener ou onClick ?
-    addTask(kanban) // Ajoute le listener
-  })
-  
-  return (<>
-    <div>Kanban</div>
-    <button id="addTask">Ajouter une tache</button>
-    <button id="addColumn" >Ajouter une colonne</button>
-    <div id="kanban" ></div>
-    </>);
+
+    onMount( ()=>{
+        // Création du kanban vide (fonction!)
+        kanban = new jKanban({
+            element: '#kanban',
+            gutter: '15px',
+            widthBoard: '250px'
+        })
+
+        // Execution de la requête API
+        const [listeColonnes] = createResource(columnRequest)
+        // var kanban = loadKanban()
+        // addColumn(kanban) // Ajoute le listener ou onClick ?
+        // addTask(kanban) // Ajoute le listener
+    })
+
+    return (
+        <>
+            <div>Kanban</div>
+            <button id="addTask">Ajouter une tache</button>
+            <button id="addColumn" >Ajouter une colonne</button>
+
+            <div id="kanban" ></div>
+        </>
+    );
 }
 
 export default App;
