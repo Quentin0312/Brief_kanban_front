@@ -3,17 +3,24 @@ import { onMount, createResource, createEffect } from "solid-js";
 // Variable globale contenant le kanban
 var kanban
 
-// Requêtes API
+// Requêtes API---------------------------------------------------------------------------------------------------------
+
+// Récup liste des colonnes
 const columnRequest = async () => (await fetch('http://localhost:8000/api/colonne/', {method: 'GET'})).json().then(
     response => {loadBoards(response, kanban)})
 
+// Récup liste des taches
 const taskRequest = async () => (await fetch ('http://localhost:8000/api/tache/', {method: 'GET'})).json().then(
     response=> {loadItems(response, kanban)})
 
+// Ajout nouvelle colonne
 const addColumnRequest = async () => (await fetch ('http://localhost:8000/api/colonne', {method: 'POST'})).json().then(
     response=> {addColumn(response, "Nouvelle colonne")}) //ecrire addColumn(id = response) ft buger, pq ?? 
 
-// Fonctions
+
+// Fonctions------------------------------------------------------------------------------------------------------------
+
+// Listener du bouton ajouter colonne
 function addColumnButton(kanban){
   var addColumn = document.getElementById('addColumn');
   addColumn.addEventListener('click', function () {
@@ -22,6 +29,7 @@ function addColumnButton(kanban){
   });
 }
 
+// Ajouter une colonne
 function addColumn(id, title, item = []){
     kanban.addBoards(
         [{
@@ -32,16 +40,30 @@ function addColumn(id, title, item = []){
     )
 }
 
+// Charge les colonnes
+function loadBoards(response, kanban){
+    for(let elt of response){
+        kanban.addBoards(
+            [{
+                'id' : String(elt[0]),
+                'title' : elt[1]
+            }]
+        )
+    }
+    const [listeTaches] = createResource(taskRequest)
 
-function otherAddColumn(id, titre){
-    kanban.addBoards(
-        [{
-            'id' : String(id),
-            'title' : titre,
-            'item' : [{ 'title' : 'Tache 1'}]
-        }]
-    )
 }
+
+// Charge les taches
+function loadItems(response, kanban){
+    for(let elt of response){
+        kanban.addElement(String(elt[0]),
+            { 'title' : elt[1] }, elt[2]
+
+        )
+    }
+}
+
 
 function addTask(kanban){
   var addTask = document.getElementById('addTask');
@@ -112,50 +134,6 @@ function OLDOLDloadKanban(){
     // => Problème : présent sur toutes les colonnes alors que je veu_ que sur TODO
   });
   return kanban
-}
-
-function OLDloadKanban(){
-    const [listeColonnes] = createResource(columnRequest)
-    console.log("laa",listeColonnes())
-}
-
-function oldloadKanban(response){
-    var listeColumn = []
-    for (let elt of response){
-        listeColumn.push({
-            'id' : elt[0],
-            'title' : elt[1],
-            'item' : [{ 'title' : '<span class="font-weight-bold">Item static de test</span>' }]
-        })
-    }
-    var kanban = new jKanban({
-        element : '#kanban',
-        gutter : '15px',
-        widthBoard : '250px',
-        boards : listeColumn
-    })
-}
-
-function loadBoards(response, kanban){
-    for(let elt of response){
-        kanban.addBoards(
-            [{
-                'id' : String(elt[0]),
-                'title' : elt[1]
-            }]
-        )
-    }
-    const [listeTaches] = createResource(taskRequest)
-
-}
-
-function loadItems(response, kanban){
-    for(let elt of response){
-        kanban.addElement(String(elt[0]),
-            { 'title' : elt[1] }, elt[2]
-
-        )
-    }
 }
 
 // MAIN
