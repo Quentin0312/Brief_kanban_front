@@ -3,26 +3,35 @@ import { onMount, createResource, createEffect } from "solid-js";
 // Variable globale contenant le kanban
 var kanban
 
-// Requête API
-const columnRequest = async () => (await fetch('http://localhost:8000/api/colonne/', {method: 'GET'})).json().then(response => {loadBoards(response, kanban)})
+// Requêtes API
+const columnRequest = async () => (await fetch('http://localhost:8000/api/colonne/', {method: 'GET'})).json().then(
+    response => {loadBoards(response, kanban)})
 
-const taskRequest = async () => (await fetch ('http://localhost:8000/api/tache/', {method: 'GET'})).json().then(response=>{loadItems(response, kanban)})
+const taskRequest = async () => (await fetch ('http://localhost:8000/api/tache/', {method: 'GET'})).json().then(
+    response=> {loadItems(response, kanban)})
+
+const addColumnRequest = async () => (await fetch ('http://localhost:8000/api/colonne', {method: 'POST'})).json().then(
+    response=> {addColumn(response, "Nouvelle colonne")}) //ecrire addColumn(id = response) ft buger, pq ?? 
 
 // Fonctions
-function addColumn(kanban){
+function addColumnButton(kanban){
   var addColumn = document.getElementById('addColumn');
   addColumn.addEventListener('click', function () {
-      //ici metre la requete /api/colonne en "POST" => ATTENTION asynchrone à gérer
-      console.log("=>",kanban)
-      kanban.addBoards(
-          [{
-              'id' : '_default',
-              'title' : 'Nouvelle colonne',
-              'item' : [{ 'title' : 'Tache 1'}]
-          }]
-      )
+    //ici metre la requete /api/colonne en "POST" => ATTENTION asynchrone à gérer
+    const [ajoutColonne] = createResource(addColumnRequest)
   });
 }
+
+function addColumn(id, title, item = []){
+    kanban.addBoards(
+        [{
+            'id' : id,
+            'title' : title,
+            'item' : item
+        }]
+    )
+}
+
 
 function otherAddColumn(id, titre){
     kanban.addBoards(
@@ -143,7 +152,7 @@ function loadBoards(response, kanban){
 function loadItems(response, kanban){
     for(let elt of response){
         kanban.addElement(String(elt[0]),
-            { 'title' : elt[1] }
+            { 'title' : elt[1] }, elt[2]
 
         )
     }
@@ -162,6 +171,7 @@ function App() {
 
         // Execution de la requête API
         const [listeColonnes] = createResource(columnRequest)
+        addColumnButton(kanban)
         // var kanban = loadKanban()
         // addColumn(kanban) // Ajoute le listener ou onClick ?
         // addTask(kanban) // Ajoute le listener
