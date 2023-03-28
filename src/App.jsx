@@ -1,4 +1,6 @@
-import { onMount } from "solid-js";
+import { onMount, createResource } from "solid-js";
+
+const columnRequest = async () => (await fetch('http://localhost:8000/api/colonne/', {method: 'GET'})).json().then(response => {console.log(response)})
 
 function addColumn(kanban){
   var addColumn = document.getElementById('addColumn');
@@ -26,12 +28,13 @@ function addTask(kanban){
 }
 
 function loadKanban(){
+  // valeur de board doit être crées selon données récup des requêtes /api/colonne en "GET"
+  // et /api/tache/<column_id> en "GET"
+  const [listeColonnes] = createResource(columnRequest)
   var kanban = new jKanban({
     element: '#kanban',
     gutter: '15px',
     widthBoard: '250px',
-    // valeur de board doit être crées selon données récup des requêtes /api/colonne en "GET"
-    // et /api/tache/<column_id> en "GET"
     boards: [{
             'id': '_todo',
             'title': 'TODO',
@@ -88,8 +91,8 @@ function loadKanban(){
 function App() {
   onMount( ()=>{
     var kanban = loadKanban()
-    addColumn(kanban)
-    addTask(kanban)
+    addColumn(kanban) // Ajoute le listener ou onClick ?
+    addTask(kanban) // Ajoute le listener
   })
   
   return (<>
