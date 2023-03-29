@@ -22,7 +22,7 @@ const modifyColumnId = async (data) => (await fetch ('http://localhost:8000/api/
 
 // Fonctions------------------------------------------------------------------------------------------------------------
 
-
+// Formatage des data à envoyer dans le body requete POST
 const Formater = (data) => {
     const formdata = new FormData()
     Object.keys(data).forEach(_data => formdata.append(_data, data[_data]) )
@@ -63,7 +63,8 @@ function loadBoards(response, kanban){
 
 }
 
-function test(target, taskId){
+// Récupérer la pos d'une tache
+function recupPos(target, taskId){
     console.log("target=>",target)
     var i = -1
     while(true){
@@ -90,7 +91,7 @@ function loadItems(response, kanban){
                 let targetColumnId = target.parentElement.dataset.id
                 let sourceColumnId = source.parentElement.dataset.id
                 // Pos de l'item
-                let posCibleTache = test(target, taskId)
+                let posCibleTache = recupPos(target, taskId)
 
                 console.log('taskId=>',taskId, "\n TargetColumnId=>", targetColumnId, "\n sourceColumnId=>", sourceColumnId, "\n posCibleTache=>",posCibleTache) 
                 let data = Formater({ targetColumnId : targetColumnId, sourceColumnId : sourceColumnId,taskId : taskId, posCibleTache : posCibleTache })
@@ -186,10 +187,9 @@ function App() {
 
         // Execution de la requête API
         const [listeColonnes] = createResource(columnRequest)
+
+        // Ajout du listener
         addColumnButton(kanban)
-        // var kanban = loadKanban()
-        // addColumn(kanban) // Ajoute le listener ou onClick ?
-        // addTask(kanban) // Ajoute le listener
     })
 
     return (
