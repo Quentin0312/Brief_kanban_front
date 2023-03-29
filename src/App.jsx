@@ -14,11 +14,15 @@ const taskRequest = async () => (await fetch ('http://localhost:8000/api/tache/'
     response=> {loadItems(response, kanban)})
 
 // Ajout nouvelle colonne
-const addColumnRequest = async () => (await fetch ('http://localhost:8000/api/colonne', {method: 'POST'})).json().then(
+const addColumnRequest = async (data) => (await fetch ('http://localhost:8000/api/colonne', {method: 'POST', body : data})).json().then(
     response=> {addColumn(response, "Nouvelle colonne")}) //ecrire addColumn(id = response) ft buger, pq ?? 
 
 // Modifier Taches(id_column)
-const modifyColumnId = async (data) => (await fetch ('http://localhost:8000/api/tache/reorder', { method: 'PUT', body : data})).json().then(response=> console.log(response))
+const modify_id_colonne = async (data) => (await fetch ('http://localhost:8000/api/tache/reorder', { method: 'PUT', body : data})).json().then(response=> console.log(response))
+
+// Reorder column
+const reorderColumn = async (data) => (await fetch ('http://localhost:8000/api/colonne/reorder', { method: 'PUT', body : data})).json().then(response=> console.log(response))
+
 
 // Fonctions------------------------------------------------------------------------------------------------------------
 
@@ -34,7 +38,9 @@ function addColumnButton(kanban){
   var addColumn = document.getElementById('addColumn');
   addColumn.addEventListener('click', function () {
     //ici metre la requete /api/colonne en "POST" => ATTENTION asynchrone à gérer
-    const [ajoutColonne] = createResource(addColumnRequest)
+    let nbColonne = document.getElementsByClassName("kanban-container")[0].childElementCount
+    let data = Formater({ titreColonne : "Nouvelle colonne", pos : nbColonne + 1}) // pos: pos
+    const [ajoutColonne] = createResource(data, addColumnRequest)
   });
 }
 
@@ -78,6 +84,20 @@ function recupPos(target, taskId){
     return i+1
 }
 
+// Récuperer la pos d'une colonne
+// function recupPosColonne(el){
+//     let nbColonne = document.getElementsByClassName("kanban-container")[0].childElementCount
+//     let posColonne
+//     for(let i = 1 ; i <= nbColonne ; i+= 1){
+//         if (i == el.dataset.id){
+//             posColonne = i
+//             console.log('yabidou')
+//             break
+//         }
+//     }
+//     return posColonne
+// }
+
 // Charge les taches
 function loadItems(response, kanban){
     for(let elt of response){
@@ -95,7 +115,7 @@ function loadItems(response, kanban){
 
                 console.log('taskId=>',taskId, "\n TargetColumnId=>", targetColumnId, "\n sourceColumnId=>", sourceColumnId, "\n posCibleTache=>",posCibleTache) 
                 let data = Formater({ targetColumnId : targetColumnId, sourceColumnId : sourceColumnId,taskId : taskId, posCibleTache : posCibleTache })
-                const [taskDrop] = createResource(data, modifyColumnId)
+                const [taskDrop] = createResource(data, modify_id_colonne)
             }}, elt[2]
 
         )
@@ -182,7 +202,14 @@ function App() {
         kanban = new jKanban({
             element: '#kanban',
             gutter: '15px',
-            widthBoard: '250px'
+            widthBoard: '250px',
+            dragendBoard : function (el) {
+                let idColonne = el.dataset.id
+                let posColonne = el.dataset.order
+                let datas = Formater({ idColonne : idColonne, nvlePos : posColonne })
+                const [changeColPos] = createResource(datas, reorderColumn)
+                // let posColonne = recupPosColonne(el)
+            }   // console.log("id=>",el.dataset.id, "posFin=>") // console.log(el.parentNode.children[0].dataset.id)
         })
 
         // Execution de la requête API
