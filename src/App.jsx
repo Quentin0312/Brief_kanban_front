@@ -23,6 +23,9 @@ const modify_id_colonne = async (data) => (await fetch ('http://localhost:8000/a
 // Reorder column
 const reorderColumn = async (data) => (await fetch ('http://localhost:8000/api/colonne/reorder', { method: 'PUT', body : data})).json().then(response=> console.log(response))
 
+// Modifier titre de colonne
+const modify_titre_colonne = async (data) => (await fetch ('http://localhost:8000/api/colonne/'+data["idColonne"], { method : 'PUT', body : data['data']})).json().then(response=>console.log('then modif titre col'+response))
+
 
 // Fonctions------------------------------------------------------------------------------------------------------------
 
@@ -53,6 +56,7 @@ function addColumn(id, title, item = []){
             'item' : item
         }]
     )
+    modifyColumnTitle() // pas propre car recreer tout les listener au lieu de rajouter le nouveau 
 }
 
 // Charge les colonnes
@@ -120,8 +124,8 @@ function loadItems(response, kanban){
 
         )
     }
+    modifyColumnTitle()
 }
-
 
 function addTask(kanban){
   var addTask = document.getElementById('addTask');
@@ -194,6 +198,29 @@ function OLDOLDloadKanban(){
   return kanban
 }
 
+function modifyColumnTitle(){
+    let clickOnModify = document.getElementsByClassName('kanban-title-button btn btn-default btn-xs')
+    let nbTotalBtn = clickOnModify.length
+    for (let i = 0 ; i <= nbTotalBtn - 1 ; i+=1){
+        clickOnModify.item(i).addEventListener('click', function (e) {
+            let idColonne = e.target.parentElement.parentElement.dataset.id;
+            let newTitle = prompt("Entrer le nouveau titre de colonne");
+            if (newTitle != ""){
+                console.log("id de la colonne=> ",idColonne);
+                console.log("nouveau titre=>", newTitle);
+    
+                // Requete pour modif le titre dans la BDD
+                let data = Formater({ newTitle : newTitle })
+                let dicoDatas = { "idColonne" : idColonne, "data" : data}
+                const [modifyTitle] = createResource(dicoDatas, modify_titre_colonne)
+                // Modif du titre dans le HTML
+                e.target.parentElement.children[0].innerText = newTitle
+            }
+        })
+    }
+    // console.log("la=>",clickOnModify.item(1))
+}
+
 // MAIN
 function App() {
 
@@ -203,13 +230,16 @@ function App() {
             element: '#kanban',
             gutter: '15px',
             widthBoard: '250px',
+            itemAddOptions : {
+                enabled: true,
+                content: 'modifier'
+            },
             dragendBoard : function (el) {
                 let idColonne = el.dataset.id
                 let posColonne = el.dataset.order
                 let datas = Formater({ idColonne : idColonne, nvlePos : posColonne })
                 const [changeColPos] = createResource(datas, reorderColumn)
-                // let posColonne = recupPosColonne(el)
-            }   // console.log("id=>",el.dataset.id, "posFin=>") // console.log(el.parentNode.children[0].dataset.id)
+            }
         })
 
         // Execution de la requête API
@@ -217,6 +247,8 @@ function App() {
 
         // Ajout du listener
         addColumnButton(kanban)
+
+       
     })
 
     return (
