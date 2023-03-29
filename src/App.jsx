@@ -17,8 +17,17 @@ const taskRequest = async () => (await fetch ('http://localhost:8000/api/tache/'
 const addColumnRequest = async () => (await fetch ('http://localhost:8000/api/colonne', {method: 'POST'})).json().then(
     response=> {addColumn(response, "Nouvelle colonne")}) //ecrire addColumn(id = response) ft buger, pq ?? 
 
+// Modifier Taches(id_column)
+const modifyColumnId = async (data) => (await fetch ('http://localhost:8000/api/tache/reorder', { method: 'PUT', body : data})).json().then(response=> console.log(response))
 
 // Fonctions------------------------------------------------------------------------------------------------------------
+
+
+const Formater = (data) => {
+    const formdata = new FormData()
+    Object.keys(data).forEach(_data => formdata.append(_data, data[_data]) )
+    return formdata
+}
 
 // Listener du bouton ajouter colonne
 function addColumnButton(kanban){
@@ -54,11 +63,39 @@ function loadBoards(response, kanban){
 
 }
 
+function test(target, taskId){
+    console.log("target=>",target)
+    var i = -1
+    while(true){
+        i+=1
+        if (target.parentNode.children[1].children[i].dataset.eid == taskId){
+            break
+        }
+        else{continue}
+        
+    }
+    return i+1
+}
+
 // Charge les taches
 function loadItems(response, kanban){
     for(let elt of response){
-        kanban.addElement(String(elt[0]),
-            { 'title' : elt[1] }, elt[2]
+        kanban.addElement( String(elt[0]) ,{
+            'id' : elt[3],
+            'title' : elt[1],
+            click: function(el){console.log('click')},
+            // Executé lors du drop d'une tache
+            drop: function(el, target, source) {
+                let taskId = el.dataset.eid
+                let targetColumnId = target.parentElement.dataset.id
+                let sourceColumnId = source.parentElement.dataset.id
+                // Pos de l'item
+                let posCibleTache = test(target, taskId)
+
+                console.log('taskId=>',taskId, "\n TargetColumnId=>", targetColumnId, "\n sourceColumnId=>", sourceColumnId, "\n posCibleTache=>",posCibleTache) 
+                let data = Formater({ targetColumnId : targetColumnId, sourceColumnId : sourceColumnId,taskId : taskId, posCibleTache : posCibleTache })
+                const [taskDrop] = createResource(data, modifyColumnId)
+            }}, elt[2]
 
         )
     }
