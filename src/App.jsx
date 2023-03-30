@@ -26,8 +26,37 @@ const reorderColumn = async (data) => (await fetch ('http://localhost:8000/api/c
 // Modifier titre de colonne
 const modify_titre_colonne = async (data) => (await fetch ('http://localhost:8000/api/colonne/'+data["idColonne"], { method : 'PUT', body : data['data']})).json().then(response=>console.log('then modif titre col'+response))
 
+// Ajouter une tache
+const ajouterTache = async (data) => (await fetch ('http://localhost:8000/api/tache', {method : "POST", body : data})).json().then(response=> ajouterTacheApresRequete(response)) 
+
 
 // Fonctions------------------------------------------------------------------------------------------------------------
+
+function ajouterTacheApresRequete(response){
+    let titre = response['titreTache']
+    let id = response['derId']
+    console.log('id=>', id)
+
+
+    kanban.addElement(response['idColonne'],{
+        'title': titre, 
+        'id' : id,
+        click: function(el) {console.log(el)},
+        drop: function(el, target, source) {
+            let taskId = el.dataset.eid
+            let targetColumnId = target.parentElement.dataset.id
+            let sourceColumnId = source.parentElement.dataset.id
+
+            // Pos de l'item
+            let posCibleTache = recupPos(target, taskId)
+
+            console.log('taskId=>',taskId, "\n TargetColumnId=>", targetColumnId, "\n sourceColumnId=>", sourceColumnId, "\n posCibleTache=>",posCibleTache)
+            let data = Formater({ targetColumnId : targetColumnId,sourceColumnId : sourceColumnId, taskId : taskId, posCibleTache : posCibleTache })
+
+            const [taskDrop] = createResource(data, modify_id_colonne)
+        }}, response['pos']
+    )
+}
 
 // Formatage des data à envoyer dans le body requete POST
 const Formater = (data) => {
@@ -39,8 +68,8 @@ const Formater = (data) => {
 // Listener du bouton ajouter colonne
 function addColumnButton(kanban){
   var addColumn = document.getElementById('addColumn');
+
   addColumn.addEventListener('click', function () {
-    //ici metre la requete /api/colonne en "POST" => ATTENTION asynchrone à gérer
     let nbColonne = document.getElementsByClassName("kanban-container")[0].childElementCount
     let data = Formater({ titreColonne : "Nouvelle colonne", pos : nbColonne + 1}) // pos: pos
     const [ajoutColonne] = createResource(data, addColumnRequest)
@@ -51,7 +80,7 @@ function addColumnButton(kanban){
 function addColumn(id, title, item = []){
     kanban.addBoards(
         [{
-            'id' : id,
+            'id' : String(id),
             'title' : title,
             'item' : item
         }]
@@ -110,6 +139,7 @@ function loadItems(response, kanban){
             'title' : elt[1],
             click: function(el){console.log('click')},
             // Executé lors du drop d'une tache
+            // En faire une seule fonction car réutilisé !
             drop: function(el, target, source) {
                 let taskId = el.dataset.eid
                 let targetColumnId = target.parentElement.dataset.id
@@ -128,13 +158,28 @@ function loadItems(response, kanban){
 }
 
 function addTask(kanban){
-  var addTask = document.getElementById('addTask');
-  addTask.addEventListener('click', function () {
-      //ici metre la requete /api/tache en "POST" => ATTENTION asynchrone à gérer
-      kanban.addElement('_todo',
-        { 'title': 'Test' }
-      )
-  })
+    var addTask = document.getElementById('addTask');
+    addTask.addEventListener('click', function () {
+        // Récup de l'id de la colonne en pos1
+        let idColonne = document.getElementsByClassName('kanban-container')[0].children[0].dataset.id
+
+        // Récup du dernier id taches présent ATTENTION si fclté supprimer tache ajouté, id doit être récup de la BDD
+        let test = document.getElementsByClassName('kanban-item')
+        let lastId = 0;
+        for (let i = 0; i < test.length; i +=1){
+            console.log(test.item(i).dataset.eid)
+            let actualId = test.item(i).dataset.eid
+            if ( actualId > lastId ){
+                lastId = actualId
+            }
+        }
+        lastId = Number(lastId)
+        // Requete API
+        let pos = document.getElementsByClassName('kanban-container')[0].children[0].children[1].children.length + 1
+        // console.log('yolo', document.getElementsByClassName('kanban-container')[0].children[0].children[1].children.length)
+        let data = Formater({ titreTache : 'Nouvelle tache', idColonne : idColonne, pos : pos })
+        const [ajouter_tache] = createResource(data, ajouterTache)
+    })
 }
 
 function OLDOLDloadKanban(){
@@ -245,8 +290,10 @@ function App() {
         // Execution de la requête API
         const [listeColonnes] = createResource(columnRequest)
 
-        // Ajout du listener
+        // Ajout des listeners
         addColumnButton(kanban)
+
+        addTask(kanban)
 
        
     })
