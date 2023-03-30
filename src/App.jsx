@@ -27,10 +27,42 @@ const reorderColumn = async (data) => (await fetch ('http://localhost:8000/api/c
 const modify_titre_colonne = async (data) => (await fetch ('http://localhost:8000/api/colonne/'+data["idColonne"], { method : 'PUT', body : data['data']})).json().then(response=>console.log('then modif titre col'+response))
 
 // Ajouter une tache
-const ajouterTache = async (data) => (await fetch ('http://localhost:8000/api/tache', {method : "POST", body : data})).json().then(response=> ajouterTacheApresRequete(response)) 
+const ajouterTache = async (data) => (await fetch ('http://localhost:8000/api/tache', {method : "POST", body : data})).json().then(response=> ajouterTacheApresRequete(response))
+
+// Modifier titre tache
+const modify_titre_tache = async (data) => (await fetch ('http://localhost:8000/api/tache/'+ data['id'], { method : "PUT", body : data['data'] })).json().then(
+    response => console.log(response))
 
 
 // Fonctions------------------------------------------------------------------------------------------------------------
+
+// Formatage des data à envoyer dans le body requete POST
+const Formater = (data) => {
+    const formdata = new FormData()
+    Object.keys(data).forEach(_data => formdata.append(_data, data[_data]) )
+    return formdata
+}
+
+// Modif titre tache
+
+function modifyTaskTitle (el, e){
+    // console.log(el.dataset.eid, "\n", e);
+
+    // Datas
+    let newTitle = prompt("Entrer le nouveau titre de la tache")
+    console.log("newTitle=>",newTitle)
+
+    let idTache = el.dataset.eid
+    let mydata = Formater({ newTitle : newTitle })
+    let dicoDatas = {"data" : mydata, "id" : idTache}
+
+    // Requete
+    const [modifTitreTache] = createResource(dicoDatas, modify_titre_tache)
+
+    // Modif du titre dans le HTML
+    e.target.innerText = newTitle
+
+}
 
 function ajouterTacheApresRequete(response){
     let titre = response['titreTache']
@@ -41,7 +73,10 @@ function ajouterTacheApresRequete(response){
     kanban.addElement(response['idColonne'],{
         'title': titre, 
         'id' : id,
-        click: function(el) {console.log(el)},
+        context: function(el, e){
+            modifyTaskTitle(el, e);
+        },
+
         drop: function(el, target, source) {
             let taskId = el.dataset.eid
             let targetColumnId = target.parentElement.dataset.id
@@ -56,13 +91,6 @@ function ajouterTacheApresRequete(response){
             const [taskDrop] = createResource(data, modify_id_colonne)
         }}, response['pos']
     )
-}
-
-// Formatage des data à envoyer dans le body requete POST
-const Formater = (data) => {
-    const formdata = new FormData()
-    Object.keys(data).forEach(_data => formdata.append(_data, data[_data]) )
-    return formdata
 }
 
 // Listener du bouton ajouter colonne
@@ -137,7 +165,9 @@ function loadItems(response, kanban){
         kanban.addElement( String(elt[0]) ,{
             'id' : elt[3],
             'title' : elt[1],
-            click: function(el){console.log('click')},
+            context: function(el, e){
+                modifyTaskTitle(el, e)
+            },
             // Executé lors du drop d'une tache
             // En faire une seule fonction car réutilisé !
             drop: function(el, target, source) {
