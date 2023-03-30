@@ -330,9 +330,14 @@ function App() {
 
     return (
         <>
-            <div>Kanban</div>
-            <button id="addTask">Ajouter une tache</button>
-            <button id="addColumn" >Ajouter une colonne</button>
+            {/* <div class="bg-[#7D6ADE] h-[110px] flex justify-center grid content-center">
+                <div class="text-center text-5xl text-white flex"> Kanban </div>
+            </div> */}
+            <div class="navbar bg-base-100 bg-[#7D6ADE] w-96">
+                <a class="btn btn-ghost normal-case text-xl glass text-neutral-focus">Kanban</a>
+            </div>
+            <button class="btn btn-sm glass bg-[#7D6ADE] text-neutral-focus m-5"  id="addTask">Ajouter une tache</button>
+            <button class="btn btn-sm glass bg-[#7D6ADE] text-neutral-focus" id="addColumn" >Ajouter une colonne</button>
 
             <div id="kanban" ></div>
         </>
